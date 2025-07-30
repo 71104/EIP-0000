@@ -4,7 +4,7 @@ import py_ecc as py_ecc
 from py_ecc.bls.point_compression import compress_G1
 from py_ecc.bls.typing import G1Compressed
 from py_ecc.optimized_bls12_381.optimized_curve import (
-    curve_order, G1, multiply
+    G1, add, curve_order, eq, multiply, neg
 )
 
 
@@ -46,21 +46,21 @@ def test_case(private_key: int, nonce: int, seed: bytes):
 
     print(f"nonce: {scalar_to_string(nonce)}")
 
-    H = hash_to_curve(seed)
-    print(f"H: {point_to_string(compress_G1(H))}")
+    hash = hash_to_curve(seed)
+    print(f"hash: {point_to_string(compress_G1(hash))}")
 
-    gamma = multiply(H, private_key)
-    print(f"Gamma: {point_to_string(compress_G1(gamma))}")
+    gamma = multiply(hash, private_key)
+    print(f"gamma: {point_to_string(compress_G1(gamma))}")
 
     u = multiply(G1, nonce)
     print(f"U: {point_to_string(compress_G1(u))}")
 
-    v = multiply(H, nonce)
+    v = multiply(hash, nonce)
     print(f"V: {point_to_string(compress_G1(v))}")
 
     challenge = hash_to_scalar(
         compress_G1(public_key).to_bytes(48, "little") +
-        compress_G1(H).to_bytes(48, "little") +
+        compress_G1(hash).to_bytes(48, "little") +
         compress_G1(gamma).to_bytes(48, "little") +
         compress_G1(u).to_bytes(48, "little") +
         compress_G1(v).to_bytes(48, "little")
@@ -69,6 +69,16 @@ def test_case(private_key: int, nonce: int, seed: bytes):
 
     signature = (nonce + challenge * private_key) % curve_order
     print(f"signature: {scalar_to_string(signature)}")
+
+    u_prime = add(multiply(G1, signature), neg(
+        multiply(public_key, challenge)))
+    assert eq(u, u_prime)
+    print(f"U': {point_to_string(compress_G1(u_prime))}")
+
+    v_prime = add(multiply(hash, signature), neg(
+        multiply(gamma, challenge)))
+    assert eq(v, v_prime)
+    print(f"V': {point_to_string(compress_G1(v_prime))}")
 
 
 test_case(
