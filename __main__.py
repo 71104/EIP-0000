@@ -19,11 +19,11 @@ def keccak256(msg: bytes) -> bytes:
 
 
 def scalar_to_string(n: int):
-    return "0x" + n.to_bytes(32, "little").hex()
+    return "0x" + n.to_bytes(32, "big").hex()
 
 
 def point_to_string(value: G1Compressed):
-    return "0x" + value.to_bytes(48, "little").hex()
+    return "0x" + value.to_bytes(48, "big").hex()
 
 
 def hash_to_scalar(msg: bytes):
