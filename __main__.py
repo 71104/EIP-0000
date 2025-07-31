@@ -18,6 +18,10 @@ def keccak256(msg: bytes) -> bytes:
     return hashlib.new("sha3_256", msg).digest()
 
 
+def bytes_to_string(b: bytes) -> str:
+    return "0x" + b.hex()
+
+
 def scalar_to_string(n: int) -> str:
     return "0x" + n.to_bytes(32, "big").hex()
 
@@ -39,13 +43,13 @@ def hash_to_curve(msg: bytes) -> G1Uncompressed:
 
 def make_vrf_seed(
     fork_version: int,
-    randao_mix: int,
+    randao_mix: bytes,
     slot_number: int,
 ) -> bytes:
     return (
         DOMAIN_SEPARATOR +
         fork_version.to_bytes(8, "little") +
-        randao_mix.to_bytes(32, "little") +
+        randao_mix +
         slot_number.to_bytes(8, "little")
     )
 
@@ -54,7 +58,7 @@ def prove(
     private_key: int,
     nonce: int,
     fork_version: int,
-    randao_mix: int,
+    randao_mix: bytes,
     slot_number: int,
 ) -> tuple[G1Uncompressed, int, int]:
     public_key = multiply(G1, private_key)
@@ -77,7 +81,7 @@ def prove(
 def verify(
     public_key: G1Uncompressed,
     fork_version: int,
-    randao_mix: int,
+    randao_mix: bytes,
     slot_number: int,
     gamma: G1Uncompressed,
     challenge: int,
@@ -101,7 +105,7 @@ def test_case(
     private_key: int,
     nonce: int,
     fork_version: int,
-    randao_mix: int,
+    randao_mix: bytes,
     slot_number: int,
 ):
     print(f"private key: {scalar_to_string(private_key)}")
@@ -111,7 +115,7 @@ def test_case(
 
     print(f"nonce: {scalar_to_string(nonce)}")
 
-    print(f"RANDAO mix: {scalar_to_string(randao_mix)}")
+    print(f"RANDAO mix: {bytes_to_string(randao_mix)}")
     print(f"fork version: {fork_version}")
     print(f"slot number: {slot_number}")
     seed = make_vrf_seed(fork_version, randao_mix, slot_number)
@@ -164,7 +168,8 @@ test_case(
     private_key=hash_to_scalar(b"SATOR AREPO TENET OPERA ROTAS"),
     nonce=hash_to_scalar(b"IBAM FORTE VIA SACRA"),
     fork_version=42,
-    randao_mix=hash_to_scalar(b"LOREM IPSUM DOLOR SIT AMET"),
+    randao_mix=hash_to_scalar(
+        b"LOREM IPSUM DOLOR SIT AMET").to_bytes(32, "big"),
     slot_number=12345,
 )
 
@@ -174,7 +179,8 @@ test_case(
     private_key=hash_to_scalar(b"LOREM IPSUM DOLOR SIT AMET"),
     nonce=hash_to_scalar(b"SIC APOLLO ME SERVAVIT"),
     fork_version=43,
-    randao_mix=hash_to_scalar(b"SATOR AREPO TENET OPERA ROTAS"),
+    randao_mix=hash_to_scalar(
+        b"SATOR AREPO TENET OPERA ROTAS").to_bytes(32, "big"),
     slot_number=54321,
 )
 
